@@ -1,0 +1,332 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Rubbellos</title>
+<meta name="description" content="Rubbel frei und schau, was du gewonnen hast.">
+<meta property="og:title" content="Du hast ein Los gewonnen! 🎟️">
+<meta property="og:description" content="Rubbel frei und schau, was du gewonnen hast.">
+<meta property="og:type" content="website">
+<meta name="theme-color" content="#0f1736">
+<style>
+  /* Losbude: Nachtblau, ein knallig türkises Los mit Gold, silberne Rubbelfläche */
+  :root {
+    color-scheme: dark;
+    --bg: #0f1736;
+    --ticket: #13b5a6;
+    --ticket-deep: #0b7f86;
+    --gold: #ffcf4a;
+    --cream: #fffbea;
+    --ink: #0c1a2b;
+    --text: #f2f6ff;
+    --muted: #a9b6d6;
+    --font: ui-rounded, "SF Pro Rounded", "Arial Rounded MT Bold", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  }
+  [hidden] { display: none !important; }
+  html, body { height: 100%; }
+  body {
+    margin: 0;
+    background: radial-gradient(circle at 50% 20%, #1d2b5e, var(--bg) 65%);
+    background-color: var(--bg);
+    color: var(--text);
+    font-family: var(--font);
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+  main {
+    box-sizing: border-box;
+    min-height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 22px;
+    padding-block: 24px;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+    text-align: center;
+  }
+  .lead { margin: 0; font-size: clamp(20px, 4.5vw, 30px); font-weight: 800; text-wrap: balance; }
+
+  /* Das Los */
+  .ticket {
+    position: relative;
+    box-sizing: border-box;
+    width: min(420px, 100%);
+    padding: 22px 20px 18px;
+    border-radius: 18px;
+    background:
+      radial-gradient(circle at 0 50%, var(--bg) 0 12px, transparent 13px),
+      radial-gradient(circle at 100% 50%, var(--bg) 0 12px, transparent 13px),
+      linear-gradient(160deg, var(--ticket), var(--ticket-deep));
+    box-shadow: 0 24px 50px rgba(0, 0, 0, 0.45), inset 0 0 0 3px rgba(255, 207, 74, 0.55);
+    color: var(--cream);
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    rotate: -1.5deg;
+  }
+  .ticket .top { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+  .brand { font-size: clamp(20px, 6.2vw, 26px); white-space: nowrap; font-weight: 900; letter-spacing: 0.04em; color: var(--gold); text-shadow: 0 2px 0 rgba(0, 0, 0, 0.25); }
+  .serial { font: 600 11px var(--mono); letter-spacing: 0.1em; opacity: 0.8; }
+  .sub { font-size: 15px; font-weight: 700; }
+  .field {
+    position: relative;
+    height: 150px;
+    border-radius: 12px;
+    background: var(--cream);
+    color: var(--ink);
+    overflow: hidden;
+    box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.2);
+  }
+  .prize {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 0 14px;
+  }
+  .prize small { font-size: 11px; font-weight: 800; letter-spacing: 0.18em; text-transform: uppercase; opacity: 0.6; }
+  #prizeText { font-size: clamp(19px, 4.6vw, 24px); font-weight: 900; line-height: 1.2; text-wrap: balance; }
+  #scratch { position: absolute; inset: 0; width: 100%; height: 100%; touch-action: none; cursor: grab; transition: opacity 0.5s; }
+  #scratch.gone { opacity: 0; pointer-events: none; }
+  .fine { font-size: 11px; line-height: 1.4; opacity: 0.8; }
+
+  #after { display: flex; flex-direction: column; align-items: center; gap: 14px; }
+  #msg { margin: 0; max-width: 34ch; font-size: 16px; color: var(--muted); min-height: 1.4em; text-wrap: balance; }
+  #again {
+    font: inherit;
+    font-size: 17px;
+    font-weight: 800;
+    padding: 12px 22px;
+    border: 0;
+    border-radius: 999px;
+    background: var(--gold);
+    color: var(--ink);
+    cursor: pointer;
+    box-shadow: 0 5px 0 #b8901f;
+  }
+  #again:active { translate: 0 3px; box-shadow: 0 2px 0 #b8901f; }
+  #again:focus-visible { outline: 3px solid var(--text); outline-offset: 3px; }
+  .hint { font-size: 14px; color: var(--muted); }
+</style>
+</head>
+<body>
+<main>
+  <p class="lead" id="lead">Glückwunsch! Du hast ein Los gewonnen.</p>
+  <div class="ticket">
+    <div class="top">
+      <span class="brand">GLÜCKS-LOS</span>
+      <span class="serial" id="serial">Nr. 000000</span>
+    </div>
+    <div class="sub">Rubbel frei und gewinne!</div>
+    <div class="field">
+      <div class="prize" aria-live="polite">
+        <small>Dein Gewinn</small>
+        <div id="prizeText"></div>
+      </div>
+      <canvas id="scratch" aria-label="Rubbelfläche: mit Finger oder Maus freirubbeln"></canvas>
+    </div>
+    <div class="fine" id="fine">Gewinn einlösbar bis zum Weltuntergang. Nicht übertragbar. Ein Screenshot gilt als Beweis.</div>
+  </div>
+  <div class="hint" id="hint">Mit dem Finger über die silberne Fläche rubbeln</div>
+  <div id="after" hidden>
+    <p id="msg"></p>
+    <button id="again" type="button">Noch ein Los</button>
+  </div>
+</main>
+
+<script>
+/* =========================================================================
+   CONFIG – Gewinn und Texte.
+   Eigenen Gewinn per Link: …/rubbellos/?gewinn=Eine Kinokarte&name=Lena
+   ========================================================================= */
+const CONFIG = {
+  prize: 'Ein Döner auf meine Kosten 🥙',
+  greedPrize: 'Leider nichts. Gier wird bestraft.',
+  revealAt: 0.5,                         // ab diesem Anteil frei gerubbelt wird alles aufgedeckt
+  brush: 38,                             // Rubbel-Breite in px
+  lead: 'Glückwunsch! Du hast ein Los gewonnen.',
+  leadWithName: 'Glückwunsch, {name}! Du hast ein Los gewonnen.',
+  wonMsg: 'Screenshot machen und bei mir einlösen.',
+  againLines: [
+    'Pro Person nur ein Los. Netter Versuch.',
+    'Na gut… aber nur, weil du es bist.',
+  ],
+  greedMsg: 'Das hast du jetzt davon. Der Döner gilt aber noch.',
+  confettiColors: ['#ffcf4a', '#13b5a6', '#fffbea', '#ff6b8b', '#7aa2ff'],
+};
+
+/* ---------- Grundlagen ----------------------------------------------------- */
+const $ = (id) => document.getElementById(id);
+const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const params = new URLSearchParams(location.search);
+const cleanName = (raw) => (raw || '').replace(/[_\-.~+]+/g, ' ').replace(/[^\p{L}\s]/gu, '').trim().slice(0, 24);
+let hashN = '';
+try { hashN = cleanName(decodeURIComponent(location.hash.slice(1))); } catch (e) { hashN = ''; }
+const NAME = cleanName(params.get('name')) || hashN;
+const CUSTOM_PRIZE = (params.get('gewinn') || '').trim().slice(0, 80);
+
+$('lead').textContent = NAME ? CONFIG.leadWithName.replace('{name}', NAME) : CONFIG.lead;
+$('serial').textContent = 'Nr. ' + String(Math.floor(Math.random() * 1e6)).padStart(6, '0');
+$('prizeText').textContent = CUSTOM_PRIZE || CONFIG.prize;
+
+/* ---------- Rubbelfläche --------------------------------------------------- */
+const cv = $('scratch');
+const sx = cv.getContext('2d', { willReadFrequently: true });
+let dpr = 1, revealed = false, scratching = false, last = null, moves = 0, tries = 0;
+
+function paintCover() {
+  const r = cv.getBoundingClientRect();
+  dpr = Math.min(devicePixelRatio || 1, 2);
+  cv.width = Math.round(r.width * dpr);
+  cv.height = Math.round(r.height * dpr);
+  sx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  sx.globalCompositeOperation = 'source-over';
+  const g = sx.createLinearGradient(0, 0, r.width, r.height);
+  g.addColorStop(0, '#b9bec8');
+  g.addColorStop(0.45, '#eef1f6');
+  g.addColorStop(0.55, '#c7ccd5');
+  g.addColorStop(1, '#9aa1ad');
+  sx.fillStyle = g;
+  sx.fillRect(0, 0, r.width, r.height);
+  // Glitzer
+  for (let i = 0; i < 260; i++) {
+    sx.fillStyle = `rgba(255,255,255,${Math.random() * 0.5})`;
+    sx.fillRect(Math.random() * r.width, Math.random() * r.height, 1.5, 1.5);
+  }
+  // Schräger Schriftzug
+  sx.save();
+  sx.translate(r.width / 2, r.height / 2);
+  sx.rotate(-0.12);
+  sx.fillStyle = 'rgba(70, 76, 90, 0.55)';
+  sx.font = '900 22px ui-rounded, "Arial Rounded MT Bold", system-ui, sans-serif';
+  sx.textAlign = 'center';
+  sx.textBaseline = 'middle';
+  for (let y = -2; y <= 2; y++) sx.fillText('★ RUBBELN ★ RUBBELN ★ RUBBELN ★', (y % 2) * 40, y * 34);
+  sx.restore();
+  sx.globalCompositeOperation = 'destination-out';
+  sx.lineCap = 'round';
+  sx.lineJoin = 'round';
+  sx.lineWidth = CONFIG.brush;
+}
+
+function pos(e) {
+  const r = cv.getBoundingClientRect();
+  return { x: e.clientX - r.left, y: e.clientY - r.top };
+}
+
+function scratchTo(p) {
+  sx.beginPath();
+  sx.moveTo(last.x, last.y);
+  sx.lineTo(p.x + 0.01, p.y);
+  sx.stroke();
+  last = p;
+  if (++moves % 6 === 0) checkProgress();
+}
+
+// Anteil der freigerubbelten Pixel schätzen (jedes 24. Pixel genügt)
+function checkProgress() {
+  const d = sx.getImageData(0, 0, cv.width, cv.height).data;
+  let clear = 0, total = 0;
+  for (let i = 3; i < d.length; i += 4 * 24) { total++; if (d[i] < 128) clear++; }
+  if (clear / total >= CONFIG.revealAt) reveal();
+}
+
+cv.addEventListener('pointerdown', (e) => {
+  if (revealed) return;
+  scratching = true;
+  try { cv.setPointerCapture(e.pointerId); } catch (err) { /* ohne Capture geht es auch */ }
+  last = pos(e);
+  scratchTo(pos(e));
+  $('hint').style.visibility = 'hidden';
+});
+cv.addEventListener('pointermove', (e) => { if (scratching && !revealed) scratchTo(pos(e)); });
+const stop = () => { if (scratching) { scratching = false; checkProgress(); } };
+cv.addEventListener('pointerup', stop);
+cv.addEventListener('pointercancel', stop);
+
+function reveal() {
+  if (revealed) return;
+  revealed = true;
+  scratching = false;
+  cv.classList.add('gone');
+  $('after').hidden = false;
+  if (tries === 0) {
+    $('msg').textContent = CONFIG.wonMsg;
+    confetti();
+  } else {
+    $('msg').textContent = CONFIG.greedMsg;
+    $('again').hidden = true;
+  }
+}
+
+/* ---------- "Noch ein Los" ------------------------------------------------- */
+$('again').addEventListener('click', () => {
+  tries++;
+  if (tries === 1) { $('msg').textContent = CONFIG.againLines[0]; return; }
+  $('msg').textContent = CONFIG.againLines[1];
+  setTimeout(() => {
+    $('prizeText').textContent = CONFIG.greedPrize;
+    $('serial').textContent = 'Nr. ' + String(Math.floor(Math.random() * 1e6)).padStart(6, '0');
+    revealed = false;
+    moves = 0;
+    cv.classList.remove('gone');
+    paintCover();
+    $('after').hidden = true;
+    $('hint').style.visibility = 'visible';
+  }, 900);
+});
+
+let resizeT = 0;
+window.addEventListener('resize', () => {
+  clearTimeout(resizeT);
+  resizeT = setTimeout(() => { if (!revealed) paintCover(); }, 150);
+});
+paintCover();
+
+/* ---------- Konfetti ------------------------------------------------------- */
+function confetti() {
+  if (REDUCED) return;
+  const c = document.createElement('canvas');
+  c.style.cssText = 'position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:50';
+  document.body.append(c);
+  const d = Math.min(devicePixelRatio || 1, 2), W = innerWidth, H = innerHeight;
+  c.width = W * d;
+  c.height = H * d;
+  const x = c.getContext('2d');
+  x.scale(d, d);
+  const cols = CONFIG.confettiColors;
+  const parts = Array.from({ length: 200 }, () => ({
+    x: W / 2 + (Math.random() - 0.5) * W * 0.4, y: H * 0.4,
+    vx: (Math.random() - 0.5) * 16, vy: -Math.random() * 16 - 5,
+    r: 5 + Math.random() * 7, rot: Math.random() * 6, vr: (Math.random() - 0.5) * 0.3,
+    c: cols[(Math.random() * cols.length) | 0], rect: Math.random() < 0.6,
+  }));
+  const t0 = performance.now();
+  (function tick(now) {
+    x.clearRect(0, 0, W, H);
+    let alive = false;
+    for (const p of parts) {
+      p.vy += 0.38; p.vx *= 0.99; p.x += p.vx; p.y += p.vy; p.rot += p.vr;
+      if (p.y < H + 30) alive = true;
+      x.save();
+      x.translate(p.x, p.y);
+      x.rotate(p.rot);
+      x.fillStyle = p.c;
+      if (p.rect) x.fillRect(-p.r / 2, -p.r / 4, p.r, p.r / 2);
+      else { x.beginPath(); x.arc(0, 0, p.r / 2.4, 0, Math.PI * 2); x.fill(); }
+      x.restore();
+    }
+    if (alive && now - t0 < 7000) requestAnimationFrame(tick); else c.remove();
+  })(t0);
+}
+</script>
+</body>
+</html>
